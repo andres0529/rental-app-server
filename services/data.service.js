@@ -6,10 +6,13 @@ class DataService {
 
   async findAll() {
     const dbConnection = require('./../db/config')
+    let kijiji = require('./../db/models/kijiji.model');
+
+    const records = kijiji.find()
 
 
 
-    return { "WHAT DOES IT RETURN?: ": "Return All DATA form the DB" };
+    return records;
   }
 
 
