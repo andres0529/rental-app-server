@@ -3,16 +3,15 @@ class DataService {
     this.ads = [];
   }
 
- async findAll() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ "WHAT DOES IT RETURN?: ": "Return All DATA form the DB" });
-      }, 2000);
-    });
+
+  async findAll() {
+    const dbConnection = require('./../db/config')
+
+
+
+    return { "WHAT DOES IT RETURN?: ": "Return All DATA form the DB" };
   }
-  // async findAll() {
-  //   return { "WHAT DOES IT RETURN?: ": "Return All DATA form the DB" };
-  // }
+
 
   async findbyFilter(queries) {
     let params = [];
