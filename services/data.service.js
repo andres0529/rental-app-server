@@ -3,16 +3,18 @@ class DataService {
     this.ads = [];
   }
 
- async findAll() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ "WHAT DOES IT RETURN?: ": "Return All DATA form the DB" });
-      }, 2000);
-    });
+
+  async findAll() {
+    const dbConnection = require('./../db/config')
+    let kijiji = require('./../db/models/kijiji.model');
+
+    const records = kijiji.find()
+
+
+
+    return records;
   }
-  // async findAll() {
-  //   return { "WHAT DOES IT RETURN?: ": "Return All DATA form the DB" };
-  // }
+
 
   async findbyFilter(queries) {
     let params = [];

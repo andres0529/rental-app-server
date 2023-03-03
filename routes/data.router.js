@@ -7,8 +7,8 @@ const service = new DataService();
 // Retrieve all the data into the DB
 router.get("/", async (req, res) => {
   try {
-    const ads = await service.findAll();
-    res.json(ads);
+    const records = await service.findAll();
+    res.json(records);
   } catch (error) {
     res.status(404).json({
       message: error.message,
