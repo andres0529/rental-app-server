@@ -7,7 +7,34 @@ let adsObject = {
       {
         name: "Barrie",
         url: "https://www.listanza.com/home-for-rent/loc_barrie/in_us/p_0/",
-        data: [],
+        data: [
+          // {
+          //   id:'',
+          //   picture: "",
+          //   source: "",
+          //   monthCollected: "",
+          //   dateCollected: "",
+          //   localMunicipality: "",
+          //   town: "",
+          //   stratifiedArea: "",
+          //   streetNumber: "",
+          //   StreetName: "",
+          //   streetType: "",
+          //   postalCode: "",
+          //   housingType: "",
+          //   size: "",
+          //   secondarySuite: "",
+          //   typeOfSecondarySuite: "",
+          //   monthlyRent: "",
+          //   utilitiesIncluded: "",
+          //   CostAddHydro: "",
+          //   CostAddGas: "",
+          //   Adjusted: "",
+          //   landlordType: "",
+          //   stability: "",
+          //   possibleDuplicate: "",
+          // },
+        ],
       },
       {
         name: "Wasaga Beach",
@@ -24,89 +51,93 @@ let adsObject = {
         url: "https://www.listanza.com/home-for-rent/loc_orillia/in_us/p_0/",
         data: [],
       },
+      {
+        name: "Innisfil",
+        url: "https://www.listanza.com/home-for-rent/loc_innisfil/in_us/p_0/",
+        data: [],
+      },
+      {
+        name: "Penetanguishene",
+        url: "https://www.listanza.com/home-for-rent/loc_penetanguishene/in_us/p_0/",
+        data: [],
+      },
+      {
+        name: "Collinwood",
+        url: "https://www.listanza.com/home-for-rent/loc_collingwood/in_us/",
+        data: [],
+      },
     ],
   },
 };
+
 const runappService = {
-  // ----------------------- Function to scrape listanza.com website
-
-  async listanza() {
-    let data = [];
-
-
+  // ----------------- Function to scrape listanza.com website
+  listanza(loc) {
+    let linksListAd = [];
     
-    axios
-      .get(adsObject.listanza.locations[1].url)
-      .then((response) => {
-        let $ = cheerio.load(response.data);
-        let pagination = [
-          "https://www.listanza.com/home-for-rent/loc_orillia/in_us/p_0/",
-        ];
+    return (
+      axios.get(loc.url)
         // To grab the pagination links
-        $(
-          "#app > div.container-fluid.container-grey > div > div.pagination > div > ul > li> a"
-        ).each((i, e) => {
-          pagination.push("https://www.listanza.com/" + $(e).attr("href"));
-        });
-        return pagination;
-      })
+        .then((response) => {
+          let $ = cheerio.load(response.data);
+          let pagination = [loc.url];
+          $(
+            "#app > div.container-fluid.container-grey > div > div.pagination > div > ul > li> a"
+          ).each((i, e) => {
+            pagination.push("https://www.listanza.com/" + $(e).attr("href"));
+          });
+          return pagination;
+        })
 
-      .then((pagination) => {
-        const requests = pagination.map((page) => {
-          return axios.get(page).then((results) => {
-            let $ = cheerio.load(results.data);
-            $(
-              "#grid-inner > article > div.searchitem-in > div.searchitem-imgbox > div > a"
-            ).each((i, e) => {
-              data.push($(e).attr("href"));
-              return $(e).attr("href");
+        // Looping pagination[] and fetching the data from each number page
+        .then((pagination) => {
+          const requests = pagination.map((page) => {
+            return axios.get(page).then((results) => {
+              let $ = cheerio.load(results.data);
+              $(
+                "#grid-inner > article > div.searchitem-in > div.searchitem-imgbox > div > a"
+              ).each((i, e) => {
+                linksListAd.push($(e).attr("href"));
+                return $(e).attr("href");
+              });
             });
           });
-        });
+          return Promise.all(requests);
+        })
 
-        return Promise.all(requests);
-      })
+        .then(() => {
+          // loc.data.push(linksListAd);
+          // console.log(linksListAd);
 
-      .then(() => {
-        console.log(data);
-      });
+          const requests = linksListAd.map((singleAd) => {
+            return axios.get(singleAd).then((results) => {
+              let $ = cheerio.load(results.data);
+              let data = {};
+              data.monthlyRent = $(
+                "#app > div.container-fluid.container-grey > div > div.ltcol > div:nth-child(6) > ul > li:nth-child(5) > span.price.value"
+              ).first().text();
+
+              loc.data.push(data);
+            });
+          });
+          // console.log('hola desde 123')
+          return Promise.all(requests);
+        })
+    );
   },
-
-  // async listanza() {
-  //   // Array to saving all the urls in the pagination
-  //   let pagination = [
-  //     "https://www.listanza.com/home-for-rent/loc_barrie/in_us/p_0/",
-  //   ];
-
-  //   let states = [];
-
-  //   try {
-  //     let res = await axios.get(adsObject.listanza.locations[0].url);
-  //     let $ = cheerio.load(res.data);
-  //     // To grab the ads in page #1
-  //     // $(
-  //     //   "#grid-inner > article > div.searchitem-in > div.searchitem-imgbox > div > a"
-  //     // ).each((i, e) => {
-  //     //   states.push($(e).attr("href"));
-  //     // });
-
-  //     $(
-  //       // To grab the pagination links
-  //       "#app > div.container-fluid.container-grey > div > div.pagination > div > ul > li> a"
-  //     ).each((i, e) => {
-  //       pagination.push("https://www.listanza.com/" + $(e).attr("href"));
-  //     });
-
-  //     console.log(pagination);
-  //     return states;
-  //   } catch (error) {
-  //     return `Error: ${error}`;
-  //   }
-  // },
 
   // Function to run all the services
   async run() {
-    return await this.listanza();
+    await axios
+      .all(
+        adsObject.listanza.locations.map((loc) => {
+          return this.listanza(loc);
+        })
+      )
+      .then(() => {
+        // console.log("hello from 138")
+        console.log(adsObject.listanza.locations[0].data);
+      });
   },
 };
 
