@@ -7,7 +7,7 @@ const PORT = process.env.DEV_PORT || 3000;
 app.use(express.json());
 
 // Solving the CORS problem, to install with npm use "npm i cors"
-const whitelist = ['http://127.0.0.1:5500', 'myportfolio.com.co']
+const whitelist = ['http://127.0.0.1:5500', 'myportfolio.com.co', 'localhost:5000']
 const options = {
   origin: (origin, callback) => {
     if (whitelist.includes(origin)) {
