@@ -3,15 +3,11 @@ class DataService {
     this.ads = [];
   }
 
-
   async findAll() {
     const dbConnection = require('./../db/config')
-    let kijiji = require('./../db/models/kijiji.model');
-
-    const records = kijiji.find()
-
-
-
+    let information = require('../db/models/info.model');
+    const records = information.find();
+    
     return records;
   }
 
