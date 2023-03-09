@@ -1,8 +1,12 @@
-class RunappfileService {
- async startRunappfile(data) {
-    console.log(data);
-    return "SAVING INFORMATION INTO THE DB FROM THE FILE";
-  }
-}
+//*********Function Save **** */
 
-module.exports = RunappfileService;
+const save = () => {
+  //here goes your funcion data.save()
+};
+
+// *****************+ Main Function ********************
+const runappfileService = (data) => {
+  data = {}; //paste here all the JSON that you have harcoded
+};
+
+module.exports = runappfileService;
