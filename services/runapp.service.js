@@ -2,16 +2,20 @@ const cheerio = require("cheerio");
 const axios = require("axios");
 
 let db = {
+  angus: [],
+  alliston: [],
   barrie: [],
   bradford: [],
+  collingwood: [],
+  friday: [],
+  innisfil: [],
   newTecumseth: [],
-  collinwood: [],
-  wasaga: [],
-  angus: [],
   midland: [],
   orillia: [],
-  inisfill: [],
+  orangeville: [],
+  tottenham: [],
   penetanguishene: [],
+  wasaga: [],
 };
 
 // Function to get Data Links and return them into an Array[]
@@ -101,6 +105,7 @@ const livewithbk = async () => {
 };
 */
 // ✅ ****************** shorelinepropertymanagement.ca scraping *****************
+// This page does not need pagination
 const shorelinepropertymanagement = async () => {
   let source = "https://shorelinepropertymanagement.ca";
   let url = `https://shorelinepropertymanagement.managebuilding.com/Resident/public/rentals`;
@@ -111,12 +116,15 @@ const shorelinepropertymanagement = async () => {
     const response = await axios.get(url);
     let $ = cheerio.load(response.data);
     $(path.ads).each((i, e) => {
+      // grab the city
       let city = $(e).attr("data-location").split(",")[0].toLowerCase();
+      // If the city name is a property in DB object
       if (Object.prototype.hasOwnProperty.call(db, city)) {
         let info = {
           municipality: $(e).attr("data-location").split(",")[0].toLowerCase(),
           HousingType: $(e).attr("data-type"),
-          unitSize: $(e).attr("data-square-feet"),
+          unitSize: $(e).attr("data-bedrooms"),
+          qtyBathrooms: $(e).attr("data-bathrooms"),
           secondarySuite: "Unclear",
           typeSecondarySuite: "Unclear",
           utilitiesIncluded: "yes",
@@ -129,11 +137,99 @@ const shorelinepropertymanagement = async () => {
         db[info.municipality.split(",")[0].toLowerCase()].push(info);
       }
     });
-    return { status: 200, message: `Information saving correctly from ${source}` };
+    return {
+      status: 200,
+      message: `Information saving correctly from ${source}`,
+    };
   } catch (error) {
     return `****Error scrapping from ${source} : ${error} ****`;
   }
 };
+
+// ✅ ****************** agsecure.com scraping *****************
+// This page does not need pagination
+const agsecure = async () => {
+  let source = "https://www.agsecure.ca";
+  let baseUrl = `${source}/listings/`;
+
+  let urls = [
+    `${baseUrl}alliston`,
+    `${baseUrl}angus`,
+    `${baseUrl}barrie`,
+    `${baseUrl}bradford`,
+    `${baseUrl}collingwood`,
+    `${baseUrl}friday-harbour`,
+    `${baseUrl}innisfil`,
+    `${baseUrl}midland`,
+    `${baseUrl}orangeville`,
+    `${baseUrl}orillia`,
+    `${baseUrl}tottenham`,
+    `${baseUrl}wasaga`,
+  ];
+
+  let path = {
+    ads: "#slider > ul.slides > li.flex-active-slide > p",
+    readMore:
+      "#listings > div > div.listing > div.listing-txt > p.listing-details > span.pull-right > a",
+  };
+
+  try {
+    let data = await Promise.all(
+      urls.map(async (url) => {
+        return await scrapeData(url, path.readMore, source);
+      })
+    );
+    await Promise.all(
+      data.flat().map(async (url) => {
+        const response = await axios.get(`${source}${url}`);
+        let $ = cheerio.load(response.data);
+        let data = $("li p").first().text();
+        // due to this page has a no common structure html, I delete all the extra spaces and other characters
+        data = data
+          .replace(/\\n/g, "")
+          .replace(/\\t/g, "")
+          .replace(/\\/g, "")
+          .replace(/\s{2,}/g, " ")
+          .split(" | ");
+        let city = url.split("/")[2];
+
+        let info = {
+          municipality: city,
+          HousingType: "unclear",
+          unitSize: $("p.listing-details")
+            .first()
+            .html()
+            .replace(/[^0-9]+/g, "")[0],
+          qtyBathrooms: $("p.listing-details")
+            .first()
+            .html()
+            .replace(/[^0-9]+/g, "")[1],
+          secondarySuite: "Unclear",
+          typeSecondarySuite: "Unclear",
+          utilitiesIncluded: data[2] === "Utilities Included" ? "yes" : "Part",
+          totalCost: data[1].split(" ")[0],
+          landlordType: "unclear",
+          stability: "unclear",
+          possibleDuplicate: "unclear",
+          source: source,
+        };
+        // the name friday harbor is spelling with a middle hypen
+        if (city === "friday-harbour") {
+          city = "friday";
+        }
+
+        db[`${city}`].push(info);
+      })
+    );
+    return {
+      status: 200,
+      message: `Information saving correctly from ${source}`,
+    };
+  } catch (error) {
+    return `****Error scraping from ${source} : ${error} ****`;
+  }
+};
+
 // ✅ ****************** Listanza.com scraping *****************
 const listanza = async () => {
   let source = "https://www.listanza.com";
@@ -174,34 +270,6 @@ const listanza = async () => {
   return pagination;
 };
 
-// ✅ ****************** agsecure.com scraping *****************
-// This page does not need pagination
-const agsecure = async () => {
-  let source = "https://www.agsecure.ca";
-  let baseUrl = `${source}listings/`;
-
-  let urls = [
-    `${baseUrl}alliston`,
-    `${baseUrl}angus`,
-    `${baseUrl}barrie`,
-    `${baseUrl}bradford`,
-    `${baseUrl}collingwood`,
-    `${baseUrl}friday-harbour`,
-    `${baseUrl}innisfil`,
-    `${baseUrl}midland`,
-    `${baseUrl}orangeville`,
-    `${baseUrl}orillia`,
-    `${baseUrl}tottenham`,
-    `${baseUrl}wasaga`,
-  ];
-
-  let path = {
-    ads: "",
-  };
-
-  return "data";
-};
-
 // ✅ ****************** freerentads.com scraping *****************
 const freerentads = async () => {
   let source = "https://www.freerentads.com/";
@@ -222,9 +290,11 @@ const kijiji = () => {};
 
 // *****************+ Main Function ********************
 const runappService = async () => {
-  return shorelinepropertymanagement();
+  let status = {};
+  status.shorelinepropertymanagement = await shorelinepropertymanagement();
+  status.agsecure = await agsecure();
+  console.log(status);
   //return await listanza();
-  //return await agsecure();
   //return await freerentads();
   //return await kijiji();
 };
