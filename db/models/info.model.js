@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const schema = mongoose.Schema;
-const infoSchema = new schema({
+const informationSchema = new schema(
+    {
     dateCollected :{type:String}, //date
     town: { type: String },
     localMunicipality:{ type: String }, //ex: Bradford West , Midland, Wasaga Beach
@@ -18,9 +19,7 @@ const infoSchema = new schema({
     costAddGas: { type: String },
     stability: { type: String }, //Short-Term, Long Term, Not Stated
     possibleDuplicate: { type: String }, //Note listing as a possible duplicate
-}, {
-    timestamps: true,
 });
 
-const InformationSchema = mongoose.model('infoSchema', infoSchema);
-module.exports = InformationSchema;
+const infoSchema = mongoose.model('InfoSchema', informationSchema);
+module.exports = infoSchema;

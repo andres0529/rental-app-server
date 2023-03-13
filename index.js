@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require('cors'); //npm i cors
+const connection=require('./db/config');
 const app = express();
 const routerApi = require("./routes");
 const PORT = process.env.DEV_PORT || 3000;
@@ -19,6 +20,7 @@ const options = {
 }
 routerApi(app);
 app.use(cors(options));
+
 
 // Listening PORT
 app.listen(PORT, () => {

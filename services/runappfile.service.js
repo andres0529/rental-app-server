@@ -1,8 +1,18 @@
-class RunappfileService {
- async startRunappfile(data) {
-    console.log(data);
-    return "SAVING INFORMATION INTO THE DB FROM THE FILE";
-  }
-}
+const Info = require('../db/models/info.model');
 
-module.exports = RunappfileService;
+const runappfileService = (data) => {
+  const information = new Info(data);
+  information.save((err, savedInfo) => {
+    // console.log(data);
+    if (err) {
+      console.error(err);
+
+      return "Error saving data: ", err.message;
+    } else {
+      console.log('Information saved successfully:', savedInfo);
+      return data;
+    }
+  });
+  return information
+};
+module.exports = runappfileService;
