@@ -133,11 +133,13 @@ const agsecure = async () => {
   };
 
   try {
+    // grab all the "read more" links and save them into an array called data
     let data = await Promise.all(
       urls.map(async (url) => {
         return await scrapeData(url, path.readMore, source);
       })
     );
+
     await Promise.all(
       data.flat().map(async (url) => {
         const response = await axios.get(`${source}${url}`);
@@ -153,8 +155,13 @@ const agsecure = async () => {
         let city = url.split("/")[2];
 
         let info = {
+          address: data[0],
+          dateCollected: new Date().toLocaleDateString(),
           municipality: city,
-          HousingType: "unclear",
+          HousingType: "unlear",
+          monthCollected: new Date().toLocaleString("default", {
+            month: "long",
+          }),
           unitSize: $("p.listing-details")
             .first()
             .html()
@@ -170,6 +177,7 @@ const agsecure = async () => {
           landlordType: "unclear",
           stability: "unclear",
           possibleDuplicate: "unclear",
+          postCode: "unclear",
           source: source,
         };
         // the name friday harbor is spelling with a middle hypen
@@ -180,12 +188,9 @@ const agsecure = async () => {
         db[`${city}`].push(info);
       })
     );
-    return {
-      status: 200,
-      message: `Information saving correctly from ${source}`,
-    };
+    resultOperations.push({ status: 200, source: source });
   } catch (error) {
-    return `****Error scraping from ${source} : ${error} ****`;
+    errorHandler(error, source);
   }
 };
 
@@ -247,8 +252,8 @@ const listanza = async () => {
 // *****************+ Main Function ********************
 const runappService = async () => {
   await shorelinepropertymanagement();
-  // await agsecure();
-  //await listanza();
+  await agsecure();
+  // await listanza();
   console.log(db);
   return resultOperations;
 };
