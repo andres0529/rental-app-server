@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 const cheerio = require("cheerio");
 const axios = require("axios");
 
@@ -18,6 +19,30 @@ let db = {
   wasaga: [],
 };
 
+let resultOperations = [];
+const errorHandler = (error, source) => {
+  let details = {
+    source: source,
+  };
+  if (error.response) {
+    Object.assign(details, {
+      status: error.response.status,
+      headers: error.response.headers,
+    });
+  } else if (error.request) {
+    // The request was made but no response was received
+    Object.assign(details, {
+      Error: error.request,
+    });
+  } else {
+    // Something happened in setting up the request that triggered an Error
+    Object.assign(details, {
+      Error: error.message,
+    });
+  }
+  resultOperations.push(details);
+};
+
 // Function to get Data Links and return them into an Array[]
 const scrapeData = async (url, path, source) => {
   let data = [];
@@ -33,77 +58,6 @@ const scrapeData = async (url, path, source) => {
   }
 };
 
-/*
-
-// ❌ ****************** gottarent.com scraping *****************
-// anti-scraping which does not allow bring the info
-const gotarrent = async () => {
-  let url = "https://www.gottarent.com/simcoe-region-on-rentals/";
-  // custom path for grab elements into gotarrent.com
-  let path = {
-    pagination: "#pagi14200 > pagination > div > right > a",
-    ads: "",
-  };
-  // call the function pagination for each location of listanza.com
-  let pagination = await getPagination(url, path.pagination, "gottarent");
-  return pagination;
-};
-// ❌ ****************** zolo.com scraping *****************
-// anti-scraping which does not allow bring the info
-const zolo = async () => {
-  let source = "https://www.zolo.ca";
-  let urls = [
-    `${source}/barrie-real-estate/for-rent`,
-    `${source}/midland-real-estate/for-rent`,
-    `${source}/bradford-west-gwillimbury-real-estate/for-rent`,
-    `${source}/new-tecumseth-real-estate/for-rent`,
-    `${source}/essa-real-estate/for-rent`,
-    `${source}/innisfil-real-estate/for-rent`,
-    `${source}/springwater-real-estate/for-rent`,
-    `${source}/clearview-real-estate/for-rent`,
-    `${source}/collingwood-real-estate/for-rent`,
-    `${source}/wasaga-beach-real-estate/for-rent`,
-    `${source}/penetanguishene-real-estate/for-rent`,
-    `${source}/tay-real-estate/for-rent`,
-    `${source}/tiny-real-estate/for-rent`,
-    `${source}/orillia-real-estate/for-rent`,
-    `${source}/oro-medonte-real-estate/for-rent`,
-    `${source}/ramara-real-estate/for-rent`,
-    `${source}/severn-real-estate/for-rent`,
-  ];
-  let path = {
-    pagination:
-      "#listing_container > section.supplementary-nav.xs-my6.xs-flex.xs-flex-column.xs-flex-align-center > nav.xs-hide.md-flex a",
-    ads: "",
-  };
-
-  let pagination = Promise.all(
-    // call the function pagination for each location of zolo.ca
-    urls.map(async (url) => {
-      let urlPages = await getPagination(url, path.pagination, source);
-      // to add the first page when an empty array is returned or when is got more than 1 element
-      urlPages.length === 0 ? urlPages.unshift(url) : "";
-      return urlPages;
-    })
-  );
-
-  return pagination;
-};
-
-// ❌ ****************** livewithbk.com scraping *****************
-// This page does not need pagination
-const livewithbk = async () => {
-  let source = "https://www.livewithbk.com/";
-  let url = "https://www.livewithbk.com/property-rentals";
-  let path = {
-    adCard: "#1359157006",
-  };
-  const response = await axios.get(url);
-  let $ = cheerio.load(response.data);
-  let price = $("body");
-  return "";
-};
-*/
 // ✅ ****************** shorelinepropertymanagement.ca scraping *****************
 // This page does not need pagination
 const shorelinepropertymanagement = async () => {
@@ -118,31 +72,36 @@ const shorelinepropertymanagement = async () => {
     $(path.ads).each((i, e) => {
       // grab the city
       let city = $(e).attr("data-location").split(",")[0].toLowerCase();
+      let address = $(e).find("h3").text();
       // If the city name is a property in DB object
       if (Object.prototype.hasOwnProperty.call(db, city)) {
         let info = {
+          address: $(e).find("h3").text(),
+          dateCollected: new Date().toLocaleDateString(),
           municipality: $(e).attr("data-location").split(",")[0].toLowerCase(),
           HousingType: $(e).attr("data-type"),
           unitSize: $(e).attr("data-bedrooms"),
           qtyBathrooms: $(e).attr("data-bathrooms"),
           secondarySuite: "Unclear",
           typeSecondarySuite: "Unclear",
+          monthCollected: new Date().toLocaleString("default", {
+            month: "long",
+          }),
           utilitiesIncluded: "yes",
+          possibleDuplicate: "unclear",
           totalCost: $(e).attr("data-rent"),
+          postCode: $(e).attr("data-location").split("|")[1],
           landlordType: "unclear",
           stability: "unclear",
-          possibleDuplicate: "unclear",
           source: source,
         };
+
         db[info.municipality.split(",")[0].toLowerCase()].push(info);
       }
     });
-    return {
-      status: 200,
-      message: `Information saving correctly from ${source}`,
-    };
+    resultOperations.push({ status: 200, source: source });
   } catch (error) {
-    return `****Error scrapping from ${source} : ${error} ****`;
+    errorHandler(error, source);
   }
 };
 
@@ -267,36 +226,31 @@ const listanza = async () => {
     })
   );
 
+  // grab all the "view listing" link into each page
+  let adsList = await Promise.all(
+    pagination.map(async (url) => {
+      try {
+        let response = await scrapeData(url, path.ads, source);
+
+        return response;
+      } catch (error) {
+        resultOperations.push(errorHandler(error, source));
+      }
+    })
+  );
+
+  console.log(pagination);
+
   return pagination;
 };
 
-// ✅ ****************** freerentads.com scraping *****************
-const freerentads = async () => {
-  let source = "https://www.freerentads.com/";
-  let baseUrl = `${source}/rentals-properties-for-rent-simcoe-county-on-canada-QQSZ17294-6N1CpS`;
-
-  // custom path for grab elements into freerentads.com
-  let path = {
-    pagination:
-      "#app > div.container-fluid.container-grey > div > div.pagination > div > ul > li> a",
-    ads: "",
-  };
-
-  return "data";
-};
-
-// ✅ ****************** kijiji.com scraping *****************
-const kijiji = () => {};
-
 // *****************+ Main Function ********************
 const runappService = async () => {
-  let status = {};
-  status.shorelinepropertymanagement = await shorelinepropertymanagement();
-  status.agsecure = await agsecure();
-  console.log(status);
-  //return await listanza();
-  //return await freerentads();
-  //return await kijiji();
+  await shorelinepropertymanagement();
+  // await agsecure();
+  //await listanza();
+  console.log(db);
+  return resultOperations;
 };
 
 module.exports = runappService;
