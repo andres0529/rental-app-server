@@ -54,7 +54,7 @@ const scrapeData = async (url, path, source) => {
     });
     return data;
   } catch (error) {
-    return `****Error scrapping from ${source} : ${error} ****`;
+    resultOperations.push(errorHandler(error, source));
   }
 };
 
@@ -213,7 +213,7 @@ const listanza = async () => {
   let path = {
     pagination:
       "#app > div.container-fluid.container-grey > div > div.pagination > div > ul > li> a",
-    ads: "",
+    ads: "ul.inline.card_footer > li.pull-right > a",
   };
   let pagination = await Promise.all(
     // call the function pagination for each location of listanza.com
@@ -226,17 +226,15 @@ const listanza = async () => {
         return urlList;
       }
       // to add the first page when an empty array is returned or when is got more than 1 element
-      urlPages.length === 0 ? urlPages.unshift(url) : "";
-      return urlPages;
+      // urlPages.length === 0 ? urlPages.unshift(url) : "";
+      return urlPages.length === 0 ? [url] : urlPages;
     })
   );
-
   // grab all the "view listing" link into each page
   let adsList = await Promise.all(
-    pagination.map(async (url) => {
+    pagination.flat().map(async (url) => {
       try {
         let response = await scrapeData(url, path.ads, source);
-
         return response;
       } catch (error) {
         resultOperations.push(errorHandler(error, source));
@@ -244,16 +242,50 @@ const listanza = async () => {
     })
   );
 
-  console.log(pagination);
-
-  return pagination;
+  await Promise.all(
+    adsList.flat().map(async (url) => {
+      try {
+        const response = await axios.get(url);
+        let $ = cheerio.load(response.data);
+        let city = url.split("rental-")[1].split("-")[0].trim();
+        let info = {
+          address: $("span.sub-title").text().split("ON")[0].trim(),
+          dateCollected: new Date().toLocaleDateString(),
+          municipality: city,
+          HousingType: $("span.building.value").text(),
+          monthCollected: new Date().toLocaleString("default", {
+            month: "long",
+          }),
+          unitSize: $("span.beds.value").text(),
+          qtyBathrooms: $("span.baths.value").text(),
+          secondarySuite: "Unclear",
+          typeSecondarySuite: "Unclear",
+          utilitiesIncluded:
+            $("ul.listingul.includes.value").children("li").length > 0
+              ? "Yes"
+              : "Not",
+          totalCost: $("h2.price").text().replace(/[^\d]/g, ""),
+          landlordType: "unclear",
+          stability: "unclear",
+          possibleDuplicate: "unclear",
+          postCode: $("span.sub-title").text().split("ON")[1].trim(),
+          source: source,
+        };
+        db[`${city}`].push(info);
+       
+      } catch (error) {
+        errorHandler(error, source);
+      }
+    })
+  );
+  resultOperations.push({ status: 200, source: source });
 };
 
 // *****************+ Main Function ********************
 const runappService = async () => {
   await shorelinepropertymanagement();
   await agsecure();
-  // await listanza();
+  await listanza();
   console.log(db);
   return resultOperations;
 };
