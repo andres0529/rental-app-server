@@ -1,31 +1,23 @@
 const express = require("express");
 const router = express.Router();
-const DataService = require("./../services/data.service");
+const dataService = require("./../services/data.service");
 
-const service = new DataService();
-
-// Retrieve all the data into the DB
+// Retrieve data into the DB
 router.get("/", async (req, res) => {
   try {
-    const records = await service.findAll();
-    res.json(records);
+    const records = await dataService.find(req, res);
+    return res.json(records);
   } catch (error) {
-    res.status(404).json({
+    return res.status(404).json({
       message: error.message,
     });
   }
 });
 
-// Retrieve only the data that meets the filter into the DB
-router.get("/filter", async (req, res) => {
-  const ads = await service.findbyFilter(req.query);
-  res.json(ads);
-});
-
-// Remove data from DB
+// Remove data from DB according to one ID
 router.delete("/", async (req, res) => {
-  const ads = await service.delete(req.body);
-  res.json(ads);
+  const ads = await dataService.delete(req);
+ return res.json(ads);
 });
 
 module.exports = router;

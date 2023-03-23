@@ -21,5 +21,4 @@ const infoSchema = new schema({
     timestamps: true,
 });
 
-const InformationSchema = mongoose.model('infoSchema', infoSchema);
-module.exports = InformationSchema;
+module.exports = mongoose.model('infoSchema', infoSchema);
