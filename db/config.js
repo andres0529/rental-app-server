@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 mongoose.set("strictQuery", false);
 
 
-const uri = process.env.ATLAS_URI;
+const uri = process.env.URI_STRING;
 
 mongoose.connect(uri, {});
 

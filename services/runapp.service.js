@@ -19,6 +19,7 @@ let db = {
   wasaga: [],
 };
 
+// Function to manage the errors
 let resultOperations = [];
 const errorHandler = (error, source) => {
   let details = {
@@ -56,6 +57,28 @@ const scrapeData = async (url, path, source) => {
   } catch (error) {
     resultOperations.push(errorHandler(error, source));
   }
+};
+
+// Function to save data into MongoDB
+const saveData = async (data) => {
+  let InformationSchema = require("./../db/models/info.model.js");
+  const connection = require("./../db/config.js");
+
+  return await Promise.all(
+    Object.keys(data).map((property) => {
+      data[property].forEach((record) => {
+        const information = new InformationSchema(record);
+        information.save();
+      });
+    })
+  )
+    .then(() => {
+      return "Information saved successfully";
+    })
+
+    .catch((err) => {
+      return `Error : ${err}`;
+    });
 };
 
 // ✅ ****************** shorelinepropertymanagement.ca scraping *****************
@@ -272,7 +295,6 @@ const listanza = async () => {
           source: source,
         };
         db[`${city}`].push(info);
-       
       } catch (error) {
         errorHandler(error, source);
       }
@@ -285,8 +307,10 @@ const listanza = async () => {
 const runappService = async () => {
   await shorelinepropertymanagement();
   await agsecure();
-  await listanza();
+  // await listanza();
   console.log(db);
+  await saveData(db)
+
   return resultOperations;
 };
 

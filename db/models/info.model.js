@@ -1,23 +1,22 @@
 const mongoose = require('mongoose');
 const schema = mongoose.Schema;
 const infoSchema = new schema({
-    dateCollected :{type:String}, //date
-    town: { type: String },
-    localMunicipality:{ type: String }, //ex: Bradford West , Midland, Wasaga Beach
-    housingType: { type: String }, //Shared, Apartment, Attached, Detached, Unclear
-    stratifiedArea: { type: String },
-    streetNo: { type: String }, //Number or String?
-    streetName: { type: String },
-    streetType: { type: String },
-    postalCode: { type: String },
-    unitSize: { type: String }, //Room, Bach, 1 Bed, 2 Bed, 3 Bed, 4 Bed, 4+ Bed
+    address :{type:String}, //date
+    dateCollected: { type: String },
+    municipality:{ type: String }, //ex: Bradford West , Midland, Wasaga Beach
+    HousingType: { type: String }, //Shared, Apartment, Attached, Detached, Unclear
+    unitSize: { type: String },
+    qtyBathrooms: { type: String }, //Number or String?
     secondarySuite: { type: String }, //Yes, No, Unclear
-    monthlyRent: { type: Number },
+    typeSecondarySuite: { type: String }, //Yes, No, Unclear
+    monthCollected: { type: String },
     utilitiesIncluded: { type: String }, //Yes, No, Part, N/S, Partly<=50%, Partly>50%
-    costAddHydro: { type: String },
-    costAddGas: { type: String },
-    stability: { type: String }, //Short-Term, Long Term, Not Stated
     possibleDuplicate: { type: String }, //Note listing as a possible duplicate
+    totalCost: { type: String },
+    postCode: { type: String },
+    landlordType: { type: String },
+    stability: { type: String }, //Short-Term, Long Term, Not Stated
+    source: { type: String },
 }, {
     timestamps: true,
 });
