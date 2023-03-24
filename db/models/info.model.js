@@ -1,9 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const schema = mongoose.Schema;
-const infoSchema = new schema({
-    address :{type:String}, //date
+const infoSchema = new schema(
+  {
+    address: { type: String }, //date
     dateCollected: { type: String },
-    municipality:{ type: String }, //ex: Bradford West , Midland, Wasaga Beach
+    municipality: { type: String }, //ex: Bradford West , Midland, Wasaga Beach
     HousingType: { type: String }, //Shared, Apartment, Attached, Detached, Unclear
     unitSize: { type: String },
     qtyBathrooms: { type: String }, //Number or String?
@@ -17,8 +18,11 @@ const infoSchema = new schema({
     landlordType: { type: String },
     stability: { type: String }, //Short-Term, Long Term, Not Stated
     source: { type: String },
-}, {
+    urlAds: { type: String },
+  },
+  {
     timestamps: true,
-});
+  }
+);
 
-module.exports = mongoose.model('infoSchema', infoSchema);
+module.exports = mongoose.model("infoSchema", infoSchema);

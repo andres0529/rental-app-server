@@ -66,9 +66,13 @@ const saveData = async (data) => {
 
   return await Promise.all(
     Object.keys(data).map((property) => {
-      data[property].forEach((record) => {
-        const information = new InformationSchema(record);
-        information.save();
+      data[property].forEach(async (record) => {
+        // validating if the record exist
+        let ads = await InformationSchema.findOne({ urlAds: record.urlAds });
+        if (!ads) {
+          const information = new InformationSchema(record);
+          await information.save();
+        }
       });
     })
   )
@@ -95,7 +99,6 @@ const shorelinepropertymanagement = async () => {
     $(path.ads).each((i, e) => {
       // grab the city
       let city = $(e).attr("data-location").split(",")[0].toLowerCase();
-      let address = $(e).find("h3").text();
       // If the city name is a property in DB object
       if (Object.prototype.hasOwnProperty.call(db, city)) {
         let info = {
@@ -119,6 +122,7 @@ const shorelinepropertymanagement = async () => {
           landlordType: "unclear",
           stability: "unclear",
           source: source,
+          urlAds: $(e).attr("href"),
         };
 
         db[info.municipality.split(",")[0].toLowerCase()].push(info);
@@ -204,8 +208,9 @@ const agsecure = async () => {
           landlordType: "unclear",
           stability: "unclear",
           possibleDuplicate: "unclear",
-          postCode: "unclear",
+          postCode: "",
           source: source,
+          urlAds: url,
         };
         // the name friday harbor is spelling with a middle hypen
         if (city === "friday-harbour") {
@@ -299,6 +304,7 @@ const listanza = async () => {
           possibleDuplicate: "unclear",
           postCode: $("span.sub-title").text().split("ON")[1].trim(),
           source: source,
+          urlAds: url,
         };
         db[`${city}`].push(info);
       } catch (error) {
