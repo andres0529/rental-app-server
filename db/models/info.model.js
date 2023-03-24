@@ -12,7 +12,7 @@ const infoSchema = new schema({
     monthCollected: { type: String },
     utilitiesIncluded: { type: String }, //Yes, No, Part, N/S, Partly<=50%, Partly>50%
     possibleDuplicate: { type: String }, //Note listing as a possible duplicate
-    totalCost: { type: String },
+    totalCost: { type: Number },
     postCode: { type: String },
     landlordType: { type: String },
     stability: { type: String }, //Short-Term, Long Term, Not Stated

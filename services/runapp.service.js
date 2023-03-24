@@ -107,12 +107,14 @@ const shorelinepropertymanagement = async () => {
           qtyBathrooms: $(e).attr("data-bathrooms"),
           secondarySuite: "unclear",
           typeSecondarySuite: "unclear",
-          monthCollected: new Date().toLocaleString("default", {
-            month: "long",
-          }).toLowerCase(),
+          monthCollected: new Date()
+            .toLocaleString("default", {
+              month: "long",
+            })
+            .toLowerCase(),
           utilitiesIncluded: "yes",
           possibleDuplicate: "unclear",
-          totalCost: $(e).attr("data-rent"),
+          totalCost: Number($(e).attr("data-rent")),
           postCode: $(e).attr("data-location").split("|")[1],
           landlordType: "unclear",
           stability: "unclear",
@@ -182,9 +184,11 @@ const agsecure = async () => {
           dateCollected: new Date().toLocaleDateString(),
           municipality: city,
           HousingType: "unlear",
-          monthCollected: new Date().toLocaleString("default", {
-            month: "long",
-          }).toLowerCase(),
+          monthCollected: new Date()
+            .toLocaleString("default", {
+              month: "long",
+            })
+            .toLowerCase(),
           unitSize: $("p.listing-details")
             .first()
             .html()
@@ -196,7 +200,7 @@ const agsecure = async () => {
           secondarySuite: "unclear",
           typeSecondarySuite: "unclear",
           utilitiesIncluded: data[2] === "Utilities Included" ? "yes" : "part",
-          totalCost: data[1].split(" ")[0].substring(1),
+          totalCost: Number(data[1].split(" ")[0].substring(1)),
           landlordType: "unclear",
           stability: "unclear",
           possibleDuplicate: "unclear",
@@ -276,9 +280,11 @@ const listanza = async () => {
           dateCollected: new Date().toLocaleDateString(),
           municipality: city,
           HousingType: $("span.building.value").text().toLowerCase(),
-          monthCollected: new Date().toLocaleString("default", {
-            month: "long",
-          }).toLowerCase(),
+          monthCollected: new Date()
+            .toLocaleString("default", {
+              month: "long",
+            })
+            .toLowerCase(),
           unitSize: $("span.beds.value").text(),
           qtyBathrooms: $("span.baths.value").text(),
           secondarySuite: "Unclear",
@@ -287,7 +293,7 @@ const listanza = async () => {
             $("ul.listingul.includes.value").children("li").length > 0
               ? "yes"
               : "not",
-          totalCost: $("h2.price").text().replace(/[^\d]/g, ""),
+          totalCost: Number($("h2.price").text().replace(/[^\d]/g, "")),
           landlordType: "unclear",
           stability: "unclear",
           possibleDuplicate: "unclear",
@@ -308,7 +314,7 @@ const runappService = async () => {
   await shorelinepropertymanagement();
   await agsecure();
   await listanza();
-  await saveData(db)
+  await saveData(db);
 
   return resultOperations;
 };
