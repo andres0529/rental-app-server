@@ -22,26 +22,7 @@ let db = {
 // Function to manage the errors
 let resultOperations = [];
 const errorHandler = (error, source) => {
-  let details = {
-    source: source,
-  };
-  if (error.response) {
-    Object.assign(details, {
-      status: error.response.status,
-      headers: error.response.headers,
-    });
-  } else if (error.request) {
-    // The request was made but no response was received
-    Object.assign(details, {
-      Error: error.request,
-    });
-  } else {
-    // Something happened in setting up the request that triggered an Error
-    Object.assign(details, {
-      Error: error.message,
-    });
-  }
-  resultOperations.push(details);
+  resultOperations.push({ source: source, error: error.message });
 };
 
 // Function to get Data Links and return them into an Array[]
@@ -55,7 +36,7 @@ const scrapeData = async (url, path, source) => {
     });
     return data;
   } catch (error) {
-    resultOperations.push(errorHandler(error, source));
+    return error;
   }
 };
 
@@ -241,42 +222,44 @@ const listanza = async () => {
     `${baseUrl}loc_penetanguishene/in_us/p_0/`,
     `${baseUrl}loc_collingwood/in_us/p_0/`,
   ];
-  // custom path for grab elements into listanza.com
-  let path = {
-    pagination:
-      "#app > div.container-fluid.container-grey > div > div.pagination > div > ul > li> a",
-    ads: "ul.inline.card_footer > li.pull-right > a",
-  };
-  let pagination = await Promise.all(
-    // call the function pagination for each location of listanza.com
-    urls.map(async (url) => {
-      let urlPages = await scrapeData(url, path.pagination, source);
-      // If exist more than 1 page add the url base to all of them and add the first url which does not come by default
-      if (urlPages.length > 1) {
-        let urlList = urlPages.map((link) => `https://www.listanza.com${link}`);
-        urlList.unshift(url);
-        return urlList;
-      }
-      // to add the first page when an empty array is returned or when is got more than 1 element
-      // urlPages.length === 0 ? urlPages.unshift(url) : "";
-      return urlPages.length === 0 ? [url] : urlPages;
-    })
-  );
-  // grab all the "view listing" link into each page
-  let adsList = await Promise.all(
-    pagination.flat().map(async (url) => {
-      try {
+
+  try {
+    // custom path for grab elements into listanza.com
+    let path = {
+      pagination:
+        "#app > div.container-fluid.container-grey > div > div.pagination > div > ul > li> a",
+      ads: "ul.inline.card_footer > li.pull-right > a",
+    };
+    let pagination = await Promise.all(
+      // call the function pagination for each location of listanza.com
+      urls.map(async (url) => {
+        let urlPages = await scrapeData(url, path.pagination, source);
+
+        if (urlPages) {
+          // If exist more than 1 page add the url base to all of them and add the first url which does not come by default
+          if (urlPages.length > 1) {
+            let urlList = urlPages.map(
+              (link) => `https://www.listanza.com${link}`
+            );
+            urlList.unshift(url);
+            return urlList;
+          }
+          // to add the first page when an empty array is returned or when is got more than 1 element
+          // urlPages.length === 0 ? urlPages.unshift(url) : "";
+          return urlPages.length === 0 ? [url] : urlPages;
+        }
+      })
+    );
+    // grab all the "view listing" link into each page
+    let adsList = await Promise.all(
+      pagination.flat().map(async (url) => {
         let response = await scrapeData(url, path.ads, source);
         return response;
-      } catch (error) {
-        resultOperations.push(errorHandler(error, source));
-      }
-    })
-  );
+      })
+    );
 
-  await Promise.all(
-    adsList.flat().map(async (url) => {
-      try {
+    await Promise.all(
+      adsList.flat().map(async (url) => {
         const response = await axios.get(url);
         let $ = cheerio.load(response.data);
         let city = url.split("rental-")[1].split("-")[0].trim();
@@ -307,19 +290,27 @@ const listanza = async () => {
           urlAds: url,
         };
         db[`${city}`].push(info);
-      } catch (error) {
-        errorHandler(error, source);
-      }
-    })
-  );
-  resultOperations.push({ status: 200, source: source });
+      })
+    );
+    resultOperations.push({ status: 200, source: source });
+  } catch (error) {
+    let res = {
+      source: source,
+      error: error.message,
+      status: 403,
+    };
+
+    resultOperations.push(res);
+  }
 };
 
 // *****************+ Main Function ********************
 const runappService = async () => {
+  resultOperations = [];
+
   await shorelinepropertymanagement();
-  await agsecure();
   await listanza();
+  await agsecure();
   await saveData(db);
 
   return resultOperations;
